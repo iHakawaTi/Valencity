@@ -309,7 +309,10 @@ class DriftDetector:
     ) -> ColumnDriftResult:
         """Detect drift in numeric column."""
         reference = ref_stats["values"]
+        # Handle both enum and string
         method = self.method
+        if isinstance(method, str):
+            method = DriftMethod(method.lower())
         
         statistic: float = 0.0
         p_value: Optional[float] = None

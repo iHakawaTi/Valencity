@@ -118,10 +118,10 @@ detector = PIIDetector()
 report = detector.scan_dataframe(df)
 
 if report.has_pii:
-    print(f"⚠️  PII detected in columns: {report.pii_columns}")
-    for col, findings in report.details.items():
-        for f in findings:
-            print(f"   [{f.pii_type}] → '{f.value}'")
+    print(f"⚠️  PII detected in columns: {list(report.columns_with_pii.keys())}")
+    for col, col_report in report.columns_with_pii.items():
+        for pii_type in col_report.pii_types_found:
+            print(f"   [{pii_type.name}]")
 
 # Mask
 masker = PIIMasker(strategy="partial")   # john@example.com → j***@example.com
@@ -139,8 +139,8 @@ validation_result = schema.validate(production_df)
 
 # Quality report
 checker = DataQualityChecker()
-quality = checker.check(df)
-print(f"Null rate: {quality.null_rate:.1%} | Duplicates: {quality.duplicate_count}")
+quality = checker.full_report(df)
+print(quality.summary())
 
 # Statistical profile
 profiler = DataProfiler()
@@ -164,13 +164,13 @@ if drift.has_drift:
 ### 4 · Prevent Model Leakage
 
 ```python
-from valencity.leakage import SafeCrossValidator, LeakageDetector, SafeSplitter
+from valencity.leakage import SafeCrossValidator, LeakageDetector, temporal_train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 # Detect leakage before training
 ld = LeakageDetector()
-issues = ld.detect(X_train, X_test, y_train)
+issues = ld.full_check(X_train, X_test, y_train, y_test)
 if issues:
     print(f"🚨 Leakage found: {issues}")
 
@@ -180,8 +180,7 @@ scores = cv.cross_val_score(LogisticRegression(), X, y)
 print(f"✅ Realistic accuracy: {scores.mean():.4f} ± {scores.std():.4f}")
 
 # Safe time-series split
-splitter = SafeSplitter(strategy="time_series")
-X_train, X_test, y_train, y_test = splitter.split(X, y, time_col="date")
+X_train, X_test, y_train, y_test = temporal_train_test_split(X, y, time_column="date")
 ```
 
 ### 5 · Privacy Engineering
@@ -190,15 +189,15 @@ X_train, X_test, y_train, y_test = splitter.split(X, y, time_col="date")
 from valencity.privacy import DifferentialPrivacy, ComplianceChecker
 
 # Add calibrated noise to protect aggregates
-dp = DifferentialPrivacy(epsilon=1.0)
-noisy_mean = dp.add_noise(df["salary"].mean(), sensitivity=1000)
+dp = DifferentialPrivacy()
+noisy_mean = dp.laplace_mechanism(value=df["salary"].mean(), sensitivity=1000, epsilon=1.0)
 
 # Check GDPR / CCPA compliance
 checker = ComplianceChecker()
-compliance = checker.check(df)
-if not compliance.is_compliant:
+compliance = checker.check_gdpr(df)
+if not compliance.satisfied:
     for violation in compliance.violations:
-        print(f"❌ {violation.regulation}: {violation.description}")
+        print(f"❌ {violation.rule}: {violation.description}")
 ```
 
 ### 6 · Generate Synthetic Data
@@ -206,13 +205,14 @@ if not compliance.is_compliant:
 ```python
 from valencity.synthetic import SyntheticGenerator
 
-gen = SyntheticGenerator()
-synthetic_df = gen.generate(template_df=real_df, n_rows=1000)
+gen = SyntheticGenerator().from_dataframe(real_df)
+synthetic_df = gen.generate(num_rows=1000)
 ```
 
 ### 7 · Generate HTML Reports
 
 ```python
+from pathlib import Path
 from valencity.reports import HTMLGenerator
 from valencity.pii import PIIDetector
 
@@ -220,7 +220,7 @@ detector = PIIDetector()
 pii_report = detector.scan_dataframe(df)
 
 gen = HTMLGenerator()
-gen.generate_pii_report(pii_report, output_path="pii_report.html")
+gen.render_pii_report(pii_report, output_path=Path("pii_report.html"))
 print("📊 Report saved → pii_report.html")
 ```
 

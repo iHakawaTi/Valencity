@@ -14,7 +14,7 @@ try:
     from importlib.metadata import version as _v
     __version__ = _v("valencity")
 except Exception:
-    __version__ = "0.1.1"
+    __version__ = "0.1.4"
 __author__ = "Abdallah El-Hakawati"
 
 from valencity import leakage, pii, privacy, reports, synthetic, validation

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "valencity"
-version = "0.1.2"
+version = "0.1.4"
 description = "A privacy & ML safety toolkit for production ML pipelines"
 readme = "README.md"
 license = "MIT"
