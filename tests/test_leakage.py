@@ -1,21 +1,20 @@
-"""Tests for dataguard.leakage module."""
+"""Tests for valencity.leakage module."""
 
 import numpy as np
 import pandas as pd
 import pytest
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
-from dataguard.leakage import (
-    SafeCrossValidator,
+from valencity.leakage import (
     LeakageDetector,
-    LeakageType,
+    SafeCrossValidator,
+    group_train_test_split,
     safe_train_test_split,
     temporal_train_test_split,
-    group_train_test_split,
 )
-from dataguard.leakage.cv import LeakageRisk
+from valencity.leakage.cv import LeakageRisk
 
 
 class TestSafeCrossValidator:

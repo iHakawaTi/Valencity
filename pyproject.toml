@@ -3,14 +3,14 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "dataguard"
-version = "0.1.0"
+name = "valencity"
+version = "0.1.1"
 description = "A privacy & ML safety toolkit for production ML pipelines"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9"
 authors = [
-    { name = "Your Name", email = "your.email@example.com" }
+    { name = "Abdallah El-Hakawati", email = "abdallahelhakawati@gmail.com" }
 ]
 keywords = [
     "privacy",
@@ -38,6 +38,12 @@ dependencies = [
     "numpy>=1.21.0",
     "scikit-learn>=1.0.0",
     "scipy>=1.7.0",
+    "typer>=0.9.0",
+    "rich>=13.0.0",
+    "jinja2>=3.0.0",
+    "Faker>=10.0.0",
+    "mkdocs>=1.4.0",
+    "mkdocs-material>=9.0.0",
 ]
 
 [project.optional-dependencies]
@@ -51,17 +57,20 @@ dev = [
     "mypy>=1.0.0",
 ]
 all = [
-    "dataguard[nlp,dev]",
+    "valencity[nlp,dev]",
 ]
 
+[project.scripts]
+valencity = "valencity.cli.main:app"
+
 [project.urls]
-Homepage = "https://github.com/yourusername/dataguard"
-Documentation = "https://github.com/yourusername/dataguard#readme"
-Repository = "https://github.com/yourusername/dataguard"
-Issues = "https://github.com/yourusername/dataguard/issues"
+Homepage = "https://github.com/ihakawati/valencity"
+Documentation = "https://github.com/ihakawati/valencity#readme"
+Repository = "https://github.com/ihakawati/valencity"
+Issues = "https://github.com/ihakawati/valencity/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["dataguard"]
+packages = ["valencity"]
 
 [tool.ruff]
 line-length = 88
@@ -78,4 +87,4 @@ disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-v --cov=dataguard --cov-report=term-missing"
+addopts = "-v --cov=valencity --cov-report=term-missing"

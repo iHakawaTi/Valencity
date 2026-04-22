@@ -1,0 +1,43 @@
+site_name: valencity
+site_description: The ML Safety Fortress - PII Detection, Data Validation, and Privacy.
+site_url: https://ihakawati.github.io/valencity/
+repo_url: https://github.com/ihakawati/valencity
+repo_name: ihakawati/valencity
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: blue
+    - scheme: slate
+      primary: indigo
+      accent: blue
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - PII Detection:
+    - Overview: pii/index.md
+    - Patterns: pii/patterns.md
+    - Masking: pii/masking.md
+  - Validation:
+    - Schema Validation: validation/schema.md
+    - Quality Chips: validation/quality.md
+    - Drift Detection: validation/drift.md
+    - Expectations: validation/expectations.md
+    - Profiling: validation/profiling.md
+  - Privacy:
+    - Differential Privacy: privacy/differential.md
+    - Compliance: privacy/compliance.md
+  - Synthetic Data:
+    - Generation: synthetic/index.md
+  - Leakage Prevention: leakage/index.md
+  - API Reference: api.md

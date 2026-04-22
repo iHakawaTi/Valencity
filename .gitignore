@@ -71,3 +71,13 @@ Thumbs.db
 
 # Agent/Skills folder (not part of the package)
 .agent/
+
+# PyPI credentials — NEVER commit this
+.pypirc
+
+# Built docs site (regenerated via mkdocs build)
+site/
+
+# Generated reports (runtime artefacts)
+pii_report.html
+quality_report.html

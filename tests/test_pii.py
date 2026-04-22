@@ -1,9 +1,9 @@
-"""Tests for dataguard.pii module."""
+"""Tests for valencity.pii module."""
 
 import pandas as pd
 import pytest
 
-from dataguard.pii import PIIDetector, PIIMasker, PIIPatterns, PIIType, MaskingStrategy
+from valencity.pii import MaskingStrategy, PIIDetector, PIIMasker, PIIPatterns, PIIType
 
 
 class TestPIIPatterns:
@@ -58,6 +58,50 @@ class TestPIIPatterns:
         # Should not match invalid IPs
         assert not pattern.search("256.1.1.1")
         assert not pattern.search("1.2.3")
+
+    def test_iban_detection(self):
+        pattern = PIIPatterns.IBAN
+        # Valid IBAN-like strings (simplified regex)
+        assert pattern.search("GB29WCBD12345678")
+        assert pattern.search("DE89370000440532013000")
+        
+        # Invalid
+        assert not pattern.search("GB29")
+        assert not pattern.search("NOT AN IBAN")
+
+    def test_passport_detection(self):
+        pattern = PIIPatterns.PASSPORT
+        # US Passport (9 digits)
+        assert pattern.search("123456789")
+        # Generic Passport (Letter + Digits)
+        assert pattern.search("A12345678")
+        
+        # Too short
+        assert not pattern.search("123")
+
+    def test_api_key_detection(self):
+        pattern = PIIPatterns.API_KEY
+        # AWS Key
+        assert pattern.search("AKIAIOSFODNN7EXAMPLE")
+        # GitHub Token
+        assert pattern.search("ghp_123456789012345678901234567890123456")
+        
+        # Not a key
+        assert not pattern.search("just-some-text")
+
+    def test_medical_id_detection(self):
+        code_pattern = PIIPatterns.MEDICAL_CODE
+        npi_pattern = PIIPatterns.MEDICAL_LICENSE
+        
+        # ICD-10
+        assert code_pattern.search("A01.0")
+        assert code_pattern.search("J01")
+        
+        # NPI
+        assert npi_pattern.search("1234567890")
+        
+        # Invalid
+        assert not code_pattern.search("invalid")
 
 
 class TestPIIDetector:

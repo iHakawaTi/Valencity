@@ -1,13 +1,17 @@
-"""Tests for dataguard.validation module."""
+"""Tests for valencity.validation module."""
 
 import numpy as np
 import pandas as pd
 import pytest
 
-from dataguard.validation import (
-    DataSchema, ColumnSpec, DataType, ValidationResult,
-    DataQualityChecker, QualityStatus,
-    DriftDetector, DriftMethod, DriftStatus
+from valencity.validation import (
+    ColumnSpec,
+    DataQualityChecker,
+    DataSchema,
+    DataType,
+    DriftDetector,
+    DriftMethod,
+    QualityStatus,
 )
 
 
