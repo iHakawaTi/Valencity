@@ -1,156 +1,323 @@
-# 🛡️ DataGuard
+<div align="center">
 
-A privacy & ML safety toolkit for production ML pipelines.
+# 🛡️ Valencity
 
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+**The ML Safety Fortress**  
+*Privacy Engineering · Data Validation · Leakage Prevention*
 
-## Features
+[![PyPI version](https://img.shields.io/pypi/v/valencity.svg?color=blueviolet&style=for-the-badge)](https://pypi.org/project/valencity)
+[![Python versions](https://img.shields.io/pypi/pyversions/valencity.svg?style=for-the-badge)](https://pypi.org/project/valencity)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Downloads](https://static.pepy.tech/badge/valencity?style=for-the-badge)](https://pepy.tech/project/valencity)
+[![Codecov](https://img.shields.io/codecov/c/github/ihakawati/valencity?style=for-the-badge)](https://codecov.io/gh/ihakawati/valencity)
 
-**DataGuard** helps ML engineers build safer, more robust pipelines by providing:
+<p align="center">
+  <a href="#-why-valencity">Why Valencity</a> •
+  <a href="#-features">Features</a> •
+  <a href="#-installation">Install</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-full-api">Full API</a> •
+  <a href="#-cli">CLI</a> •
+  <a href="#-roadmap">Roadmap</a>
+</p>
 
-- **🔍 PII Detection & Masking** — Scan DataFrames for personal information and anonymize it
-- **✅ Data Validation** — Schema validation, quality checks, and distribution drift detection
-- **🚫 Leakage Prevention** — Safe cross-validation wrappers and train/test split utilities
+> **"Stop shipping ML models that leak PII or data. Valencity catches it before you do."**
 
-## Installation
+</div>
 
-```bash
-pip install dataguard
+---
+
+## 🚀 Why Valencity?
+
+Most ML teams discover data privacy problems in **production** — when it's already too late.  
+Valencity is the **safety net** that catches issues in your pipeline **before** they hit your users.
+
+One line of code. Six layers of protection.
+
+```python
+pip install valencity
 ```
 
-For NLP-based PII detection (names, addresses):
+| Capability | Valencity 🛡️ | Great Expectations | Pandera | Custom Scripts |
+|---|:---:|:---:|:---:|:---:|
+| **PII Detection (50+ patterns)** | ✅ | ❌ | ❌ | ⚠️ Manual |
+| **Masking & Anonymization** | ✅ | ❌ | ❌ | ❌ |
+| **K-Anonymity & Differential Privacy** | ✅ | ❌ | ❌ | ❌ |
+| **ML Leakage Prevention** | ✅ Full Suite | ❌ | ❌ | ❌ |
+| **Data Drift Detection (4 methods)** | ✅ | ✅ | ❌ | ⚠️ Manual |
+| **Schema + Quality Checks** | ✅ | ✅ | ✅ | ⚠️ Manual |
+| **Synthetic Data Generation** | ✅ | ❌ | ❌ | ❌ |
+| **GDPR / CCPA Compliance** | ✅ | ❌ | ❌ | ❌ |
+| **HTML Reports** | ✅ Beautiful | ✅ | ❌ | ❌ |
+| **CLI Tool** | ✅ | ❌ | ❌ | ❌ |
+
+---
+
+## ✨ Features
+
+### 🕵️ PII Detection & Anonymization
+- Detect **50+ PII types** — emails, phones, IBANs, passports, API keys, SSNs, IPs, and more
+- **Smart Masking**: redact, hash (SHA-256), partial mask, or replace with realistic fake data
+- **NLP support** for names and addresses via spaCy (optional)
+- **Async detector** for non-blocking scans in production services
+- **Plugin-friendly**: register your own custom PII patterns
+
+### ✅ Data Validation & Quality
+- **Data Profiling**: automatic statistical summary of any DataFrame
+- **Schema Validation**: enforce strict data contracts — types, nullability, ranges
+- **Quality Checks**: nulls, duplicates, outliers, cardinality, and more
+- **Fluent Expectations API**: expressive, chainable validation rules
+- **Drift Detection**: KS test, chi-squared, Jensen–Shannon divergence, and PSI
+
+### 🚫 Leakage Prevention
+- **SafeCrossValidator**: preprocessing *only* sees training fold — no more optimistic CV scores
+- **LeakageDetector**: catches target leakage, train/test overlap, and temporal leakage
+- **SafeSplitters**: time-series and group-aware train/test splits
+
+### 🔐 Privacy Engineering
+- **Differential Privacy**: add calibrated Laplace / Gaussian noise to statistics
+- **Compliance Checker**: automated GDPR & CCPA violation detection with fix suggestions
+
+### 🧬 Synthetic Data
+- **SyntheticGenerator**: generate realistic fake datasets that mirror real data distributions
+
+### 📊 Reporting
+- Beautiful **HTML reports** for PII scans, quality audits, drift analysis, and compliance checks
+
+---
+
+## 📦 Installation
+
 ```bash
-pip install dataguard[nlp]
+# Core (PII, validation, leakage, reports)
+pip install valencity
+
+# With NLP support (names, free-text addresses)
+pip install valencity[nlp]
 python -m spacy download en_core_web_sm
+
+# Full developer install
+pip install valencity[all]
 ```
 
-## Quick Start
+**Requirements:** Python ≥ 3.9, pandas ≥ 1.5, scikit-learn ≥ 1.0
 
-### PII Detection & Masking
+---
+
+## ⚡ Quick Start
+
+### 1 · Detect & Mask PII
 
 ```python
 import pandas as pd
-from dataguard.pii import PIIDetector, PIIMasker, MaskingStrategy
+from valencity.pii import PIIDetector, PIIMasker
 
-# Create sample data
-df = pd.DataFrame({
-    "name": ["John Doe", "Jane Smith"],
-    "email": ["john@example.com", "jane@company.org"],
-    "notes": ["Call me at 555-123-4567", "SSN: 123-45-6789"]
-})
+df = pd.read_csv("users.csv")
 
-# Detect PII
+# Scan
 detector = PIIDetector()
 report = detector.scan_dataframe(df)
-print(report.summary())
 
-# Mask PII
-masker = PIIMasker(strategy=MaskingStrategy.PARTIAL)
-masked_df = masker.mask_dataframe(df)
-print(masked_df)
+if report.has_pii:
+    print(f"⚠️  PII detected in columns: {report.pii_columns}")
+    for col, findings in report.details.items():
+        for f in findings:
+            print(f"   [{f.pii_type}] → '{f.value}'")
+
+# Mask
+masker = PIIMasker(strategy="partial")   # john@example.com → j***@example.com
+safe_df = masker.mask_dataframe(df)
 ```
 
-### Data Validation
+### 2 · Validate Schema & Quality
 
 ```python
-from dataguard.validation import DataSchema, ColumnSpec, DataType, DataQualityChecker
+from valencity.validation import DataSchema, DataQualityChecker, DataProfiler
 
-# Define schema
-schema = DataSchema([
-    ColumnSpec("id", DataType.INTEGER, nullable=False, unique=True),
-    ColumnSpec("email", DataType.STRING, nullable=False),
-    ColumnSpec("age", DataType.INTEGER, min_value=0, max_value=150),
-])
+# Auto-infer schema from training data
+schema = DataSchema.from_dataframe(train_df)
+validation_result = schema.validate(production_df)
 
-# Validate
-result = schema.validate(df)
-if not result.is_valid:
-    print(result.summary())
-
-# Quality checks
+# Quality report
 checker = DataQualityChecker()
-quality_report = checker.full_report(df)
-print(quality_report.summary())
+quality = checker.check(df)
+print(f"Null rate: {quality.null_rate:.1%} | Duplicates: {quality.duplicate_count}")
+
+# Statistical profile
+profiler = DataProfiler()
+profile = profiler.profile(df)
+print(profile.summary())
 ```
 
-### Drift Detection
+### 3 · Detect Data Drift
 
 ```python
-from dataguard.validation import DriftDetector
+from valencity.validation import DriftDetector
 
-# Fit on reference data
-detector = DriftDetector()
-detector.fit(reference_df)
+detector = DriftDetector(method="ks_test")   # ks_test | chi2 | js | psi
+detector.fit(reference_df=train_df)
 
-# Detect drift in new data
-drift_report = detector.detect(current_df)
-if drift_report.has_drift:
-    print(f"Drifted columns: {drift_report.drifted_columns}")
+drift = detector.detect(current_df=production_df)
+if drift.has_drift:
+    print(f"🚨 Drift detected in: {drift.drifted_columns}")
 ```
 
-### Safe Cross-Validation
+### 4 · Prevent Model Leakage
 
 ```python
-from dataguard.leakage import SafeCrossValidator, safe_train_test_split
-from sklearn.preprocessing import StandardScaler
+from valencity.leakage import SafeCrossValidator, LeakageDetector, SafeSplitter
 from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
 
-# Safe CV with per-fold preprocessing
-cv = SafeCrossValidator(
-    n_splits=5,
-    preprocessor=StandardScaler()
-)
+# Detect leakage before training
+ld = LeakageDetector()
+issues = ld.detect(X_train, X_test, y_train)
+if issues:
+    print(f"🚨 Leakage found: {issues}")
 
-# Get safe train/val splits
-for X_train, X_val, y_train, y_val in cv.split(X, y):
-    model = LogisticRegression()
-    model.fit(X_train, y_train)
-    print(f"Score: {model.score(X_val, y_val):.4f}")
+# Safe CV — preprocessing never sees test fold
+cv = SafeCrossValidator(n_splits=5, preprocessor=StandardScaler())
+scores = cv.cross_val_score(LogisticRegression(), X, y)
+print(f"✅ Realistic accuracy: {scores.mean():.4f} ± {scores.std():.4f}")
 
-# Or use safe_train_test_split with leakage checks
-X_train, X_test, y_train, y_test = safe_train_test_split(
-    X, y, 
-    test_size=0.2,
-    check_leakage=True
-)
+# Safe time-series split
+splitter = SafeSplitter(strategy="time_series")
+X_train, X_test, y_train, y_test = splitter.split(X, y, time_col="date")
 ```
 
-### Leakage Detection
+### 5 · Privacy Engineering
 
 ```python
-from dataguard.leakage import LeakageDetector
+from valencity.privacy import DifferentialPrivacy, ComplianceChecker
 
-detector = LeakageDetector()
+# Add calibrated noise to protect aggregates
+dp = DifferentialPrivacy(epsilon=1.0)
+noisy_mean = dp.add_noise(df["salary"].mean(), sensitivity=1000)
 
-# Check for target leakage
-warnings = detector.check_target_leakage(X_train, y_train)
-
-# Full check
-all_warnings = detector.full_check(X_train, X_test, y_train, y_test)
-for warning in all_warnings:
-    print(warning)
+# Check GDPR / CCPA compliance
+checker = ComplianceChecker()
+compliance = checker.check(df)
+if not compliance.is_compliant:
+    for violation in compliance.violations:
+        print(f"❌ {violation.regulation}: {violation.description}")
 ```
 
-## Modules
+### 6 · Generate Synthetic Data
 
-| Module | Description |
-|--------|-------------|
-| `dataguard.pii` | PII detection and masking |
-| `dataguard.validation` | Schema validation, quality checks, drift detection |
-| `dataguard.leakage` | Safe CV, splitting, leakage detection |
+```python
+from valencity.synthetic import SyntheticGenerator
 
-## Roadmap
+gen = SyntheticGenerator()
+synthetic_df = gen.generate(template_df=real_df, n_rows=1000)
+```
 
-- [ ] `dataguard.synthetic` — Synthetic data generation
-- [ ] `dataguard.privacy` — Differential privacy utilities
-- [ ] `dataguard.encryption` — Homomorphic encryption helpers
-- [ ] `dataguard.pipeline` — Full sklearn pipeline integration
+### 7 · Generate HTML Reports
 
-## Contributing
+```python
+from valencity.reports import HTMLGenerator
+from valencity.pii import PIIDetector
 
-Contributions welcome! Please read our contributing guidelines.
+detector = PIIDetector()
+pii_report = detector.scan_dataframe(df)
 
-## License
+gen = HTMLGenerator()
+gen.generate_pii_report(pii_report, output_path="pii_report.html")
+print("📊 Report saved → pii_report.html")
+```
 
-MIT License - see [LICENSE](LICENSE) for details.
+---
+
+## 🖥️ Full API
+
+```
+import valencity
+valencity.show_api()
+```
+
+| Module | Class / Function | Purpose |
+|---|---|---|
+| `valencity.pii` | `PIIDetector` | Scan DataFrames & text for PII |
+| `valencity.pii` | `PIIMasker` | Mask / anonymize PII |
+| `valencity.pii` | `PIIType` | Enum of 50+ supported PII types |
+| `valencity.pii` | `PIIPatterns` | Pattern registry (plugin-friendly) |
+| `valencity.pii` | `AsyncPIIDetector` | Async, non-blocking PII scanning |
+| `valencity.validation` | `DataSchema` | Schema validation & contracts |
+| `valencity.validation` | `DataQualityChecker` | Null / duplicate / outlier checks |
+| `valencity.validation` | `DataProfiler` | Statistical profiling |
+| `valencity.validation` | `DriftDetector` | KS, chi2, JS, PSI drift detection |
+| `valencity.validation` | `expect()` | Fluent expectations API |
+| `valencity.leakage` | `SafeCrossValidator` | Leakage-safe cross-validation |
+| `valencity.leakage` | `SafeSplitter` | Time-series & group-aware splits |
+| `valencity.leakage` | `LeakageDetector` | Target, overlap & temporal leakage |
+| `valencity.privacy` | `DifferentialPrivacy` | Laplace / Gaussian DP noise |
+| `valencity.privacy` | `ComplianceChecker` | GDPR / CCPA violation detection |
+| `valencity.synthetic` | `SyntheticGenerator` | Realistic synthetic data |
+| `valencity.reports` | `HTMLGenerator` | Beautiful HTML audit reports |
+
+---
+
+## 🖥️ CLI
+
+```bash
+# Show package info
+valencity info
+
+# Scan a CSV for PII
+valencity pii scan users.csv
+
+# Mask PII in a CSV
+valencity pii mask users.csv --output safe_users.csv
+
+# Generate a data profile
+valencity profile dataset.csv
+
+# Check GDPR/CCPA compliance
+valencity compliance dataset.csv
+
+# Run quality checks
+valencity validate quality dataset.csv
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] **PII Detection** — 50+ patterns, masking, async support
+- [x] **Data Validation** — schema, quality, drift, profiling
+- [x] **Leakage Prevention** — CV, splitters, detectors
+- [x] **Privacy Engineering** — differential privacy, compliance
+- [x] **Synthetic Data Generation**
+- [x] **CLI Tool**
+- [ ] **MLflow Integration** — auto-log safety checks to experiments
+- [ ] **Airflow Operator** — drop-in pipeline safety checks
+- [ ] **dbt Integration** — run Valencity checks in dbt tests
+- [ ] **Dashboard UI** — real-time data safety monitoring
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Check the [open issues](https://github.com/ihakawati/valencity/issues).
+
+```bash
+git clone https://github.com/ihakawati/valencity
+cd valencity
+pip install -e ".[dev]"
+pytest
+```
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit: `git commit -m "feat: add my feature"`
+4. Push: `git push origin feature/my-feature`
+5. Open a Pull Request
+
+---
+
+<div align="center">
+
+**Built with ❤️ for the ML Community**
+
+[PyPI](https://pypi.org/project/valencity) · [GitHub](https://github.com/ihakawati/valencity) · [Report a Bug](https://github.com/ihakawati/valencity/issues)
+
+</div>
