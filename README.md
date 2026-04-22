@@ -8,7 +8,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/valencity.svg?color=blueviolet&style=for-the-badge)](https://pypi.org/project/valencity)
 [![Python versions](https://img.shields.io/pypi/pyversions/valencity.svg?style=for-the-badge)](https://pypi.org/project/valencity)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Downloads](https://static.pepy.tech/badge/valencity?style=for-the-badge)](https://pepy.tech/project/valencity)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/valencity.svg?style=for-the-badge&label=Downloads)](https://pypi.org/project/valencity)
 [![Codecov](https://img.shields.io/codecov/c/github/ihakawati/valencity?style=for-the-badge)](https://codecov.io/gh/ihakawati/valencity)
 
 <p align="center">
