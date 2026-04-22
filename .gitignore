@@ -81,3 +81,12 @@ site/
 # Generated reports (runtime artefacts)
 pii_report.html
 quality_report.html
+
+# Internal / dev-only files — kept local, not on GitHub
+docs/
+tests/
+mkdocs.yml
+codecov.yml
+.github/
+rename_package.py
+sample.csv

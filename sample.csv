@@ -1,4 +1,0 @@
-id,name,email,phone,ip,notes
-1,John Doe,john@example.com,555-0100,192.168.1.1,Regular user
-2,Jane Smith,jane.smith@company.org,555-0101,10.0.0.5,Admin account
-3,Bob Jones,bob@test.co.uk,(555) 010-2222,172.16.0.1,Notes with PII
