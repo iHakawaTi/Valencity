@@ -85,7 +85,7 @@ class PIIMasker:
     
     def __init__(
         self,
-        strategy: MaskingStrategy = MaskingStrategy.REDACT,
+        strategy: "str | MaskingStrategy" = MaskingStrategy.REDACT,
         config: Optional[MaskingConfig] = None,
         pii_types: Optional[List[PIIType]] = None,
         use_nlp: bool = False
@@ -94,11 +94,15 @@ class PIIMasker:
         Initialize the PII masker.
         
         Args:
-            strategy: The masking strategy to use.
+            strategy: The masking strategy to use. Accepts a MaskingStrategy
+                enum value or a plain string: 'redact', 'hash', 'partial', 'fake'.
             config: Optional detailed configuration.
             pii_types: List of PII types to mask. Defaults to all.
             use_nlp: Whether to use NLP for name/address detection.
         """
+        # Accept plain strings for convenience (e.g. strategy="partial")
+        if isinstance(strategy, str):
+            strategy = MaskingStrategy(strategy.lower())
         self.config = config or MaskingConfig(strategy=strategy)
         self.detector = PIIDetector(pii_types=pii_types, use_nlp=use_nlp)
         

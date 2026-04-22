@@ -16,82 +16,119 @@ class ComplianceViolation:
     description: str
     severity: str  # High, Medium, Low
 
+
 @dataclass
 class ComplianceReport:
-    satisfied: bool
     violations: List[ComplianceViolation] = field(default_factory=list)
+
+    @property
+    def satisfied(self) -> bool:
+        """True if no violations found."""
+        return len(self.violations) == 0
+
+    @property
+    def is_compliant(self) -> bool:
+        """Alias for satisfied."""
+        return self.satisfied
+
 
 class ComplianceChecker:
     """
-    Check dataset for potential privacy regulation violations (GDPR/CCPA context).
-    Note: This is a technical helper, not legal advice.
+    Check a dataset for potential privacy regulation violations.
+
+    Performs heuristic technical checks for GDPR/CCPA patterns.
+    Note: This is a technical helper tool, not legal advice.
+
+    Example:
+        >>> checker = ComplianceChecker()
+        >>> report = checker.check(df)          # or check_gdpr(df)
+        >>> if not report.is_compliant:
+        ...     for v in report.violations:
+        ...         print(v.rule, v.severity)
     """
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self.pii_detector = PIIDetector()
-        
+
     def check_gdpr(self, df: pd.DataFrame) -> ComplianceReport:
         """
-        Perform basic technical checks relevant to GDPR.
-        
+        Check a DataFrame for GDPR compliance violations.
+
         Checks:
-        1. Presence of unmasked direct identifiers (Email, SSN, Phone).
-        2. (Heuristic) Presence of potential 'consent' tracking.
+          1. Unmasked high-risk PII (emails, SSNs, phones, etc.)
+          2. Absence of consent / legal_basis tracking columns
+          3. General data minimization heuristic
+
+        Args:
+            df: DataFrame to audit.
+
+        Returns:
+            ComplianceReport with a list of violations.
         """
         if not isinstance(df, pd.DataFrame):
-            raise ValueError("Input must be a pandas DataFrame")
-            
-        violations = []
-        
-        # 1. Check for unmasked PII
+            raise TypeError("Input must be a pandas DataFrame")
+
+        report = ComplianceReport()
         pii_report = self.pii_detector.scan_dataframe(df)
-        
+
         if pii_report.has_pii:
-            # Check for high risk PII
-            critical_types = {PIIType.EMAIL, PIIType.SSN, PIIType.PHONE, PIIType.PASSPORT, PIIType.IBAN}
-            found_critical = False
-            
-            for col, report in pii_report.columns_with_pii.items():
+            critical_types = {
+                PIIType.EMAIL, PIIType.SSN, PIIType.PHONE,
+                PIIType.PASSPORT, PIIType.IBAN,
+            }
+
+            for col, col_report in pii_report.columns_with_pii.items():
                 found_types = set()
-                # Normalize types to Enum if possible for comparison
-                for t in report.pii_types_found:
+                for t in col_report.pii_types_found:
                     if isinstance(t, PIIType):
                         found_types.add(t)
-                    # We could try to map strings back to Enums if needed, or just ignore custom types for "Critical" check unless defined
-                
-                intersection = found_types.intersection(critical_types)
-                if intersection:
-                    found_critical = True
-                    types_list = [t.value for t in intersection]
-                    types_str = ", ".join(types_list)
-                    violations.append(ComplianceViolation(
-                        rule="GDPR Art. 32 (Security of Processing)",
-                        description=f"Unmasked critical PII found in column '{col}': {types_str}. Storage of clear-text PII increases breach risk.",
-                        severity="High"
-                    ))
-            
-            # If only low risk PII found, might still be an issue but lower severity
-            if not found_critical and pii_report.has_pii:
-                 violations.append(ComplianceViolation(
-                        rule="Data Minimization",
-                        description=f"Potential PII detected in columns: {', '.join(pii_report.pii_columns)}. Verify necessity.",
-                        severity="Medium"
-                    ))
 
-        # 2. Check for consent fields (heuristics)
-        # Looking for columns like 'consent', 'opt_in', 'agreed'
-        columns_lower = [str(c).lower() for c in df.columns]
-        has_consent = any(term in col for col in columns_lower for term in ['consent', 'opt_in', 'legal_basis'])
-        
-        # This is a weak check, but useful reminder
-        if pii_report.has_pii and not has_consent:
-             violations.append(ComplianceViolation(
-                rule="GDPR Art. 6 (Lawfulness of Processing)",
-                description="PII detected but no obvious 'consent' or 'legal_basis' column found in dataset. Ensure you track the legal basis for processing this data.",
-                severity="Low" # It's low because we might just miss the column name
-            ))
+                critical_found = found_types & critical_types
+                if critical_found:
+                    types_str = ", ".join(t.value for t in critical_found)
+                    report.violations.append(
+                        ComplianceViolation(
+                            rule="GDPR Art. 32 (Security of Processing)",
+                            description=(
+                                f"Unmasked high-risk PII in column '{col}': {types_str}. "
+                                "Clear-text PII storage increases breach risk."
+                            ),
+                            severity="High",
+                        )
+                    )
+                elif found_types:
+                    report.violations.append(
+                        ComplianceViolation(
+                            rule="Data Minimization",
+                            description=(
+                                f"Potential PII detected in column '{col}'. "
+                                "Verify data is necessary and properly protected."
+                            ),
+                            severity="Medium",
+                        )
+                    )
 
-        return ComplianceReport(
-            satisfied=len(violations) == 0,
-            violations=violations
-        )
+            # Check for consent / legal basis columns (heuristic)
+            cols_lower = [str(c).lower() for c in df.columns]
+            has_consent = any(
+                term in col
+                for col in cols_lower
+                for term in ("consent", "opt_in", "legal_basis", "processing_purpose")
+            )
+            if not has_consent:
+                report.violations.append(
+                    ComplianceViolation(
+                        rule="GDPR Art. 6 (Lawfulness of Processing)",
+                        description=(
+                            "PII detected but no 'consent', 'opt_in', or 'legal_basis' column found. "
+                            "Ensure you track the legal basis for processing personal data."
+                        ),
+                        severity="Low",
+                    )
+                )
+
+        return report
+
+    def check(self, df: pd.DataFrame) -> ComplianceReport:
+        """Convenience alias for check_gdpr()."""
+        return self.check_gdpr(df)

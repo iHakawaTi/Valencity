@@ -130,6 +130,11 @@ class DriftDetector:
             threshold: P-value threshold for significance.
             n_bins: Number of bins for PSI calculation.
         """
+        # Accept plain strings for convenience (e.g. method="ks_test")
+        if isinstance(method, str):
+            method = DriftMethod(method.lower())
+        if isinstance(categorical_method, str):
+            categorical_method = DriftMethod(categorical_method.lower())
         self.method = method
         self.categorical_method = categorical_method
         self.threshold = threshold

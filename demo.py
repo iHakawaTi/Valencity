@@ -1,64 +1,60 @@
 """
-╔══════════════════════════════════════════════════════════════════════╗
-║            🛡️  VALENCITY — Full Feature Demo (v0.1.1)                ║
-║         pip install valencity  →  python demo.py                    ║
-╚══════════════════════════════════════════════════════════════════════╝
-
-Run this script to showcase every major feature of Valencity.
-Perfect for LinkedIn demos, talks, or onboarding new team members.
+Valencity v0.1.1 - Full Feature Demo
+======================================
+Run:  python demo.py
+pip install valencity
 """
+import os
+import sys
 
-import time
+# Fix Windows terminal encoding (emoji in logging would crash otherwise)
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+import logging
 import warnings
+
+warnings.filterwarnings("ignore")
+logging.disable(logging.CRITICAL)  # silence internal logger emoji on Windows
 
 import numpy as np
 import pandas as pd
 
-warnings.filterwarnings("ignore")
-
-# ── helpers ──────────────────────────────────────────────────────────
+# ── rich output (optional but pretty) ───────────────────────────────
 try:
     from rich.console import Console
     from rich.panel import Panel
     from rich.rule import Rule
     from rich.table import Table
 
-    console = Console()
+    console = Console(highlight=False)
     USE_RICH = True
 except ImportError:
     USE_RICH = False
     console = None  # type: ignore
 
 
-def header(title: str, emoji: str = "🛡️") -> None:
+def header(title: str, emoji: str = "") -> None:
     if USE_RICH:
         console.print()
         console.print(Rule(f"[bold cyan]{emoji}  {title}[/bold cyan]"))
     else:
-        print(f"\n{'='*60}")
-        print(f"  {emoji}  {title}")
-        print("=" * 60)
+        print(f"\n{'='*60}\n  {emoji}  {title}\n{'='*60}")
 
 
 def ok(msg: str) -> None:
     if USE_RICH:
-        console.print(f"  [bold green]✅[/bold green]  {msg}")
+        console.print(f"  [bold green]OK[/bold green]  {msg}")
     else:
-        print(f"  ✅  {msg}")
+        print(f"  OK  {msg}")
 
 
 def warn(msg: str) -> None:
     if USE_RICH:
-        console.print(f"  [bold yellow]⚠️ [/bold yellow]  {msg}")
+        console.print(f"  [bold yellow]!![/bold yellow]  {msg}")
     else:
-        print(f"  ⚠️   {msg}")
-
-
-def err(msg: str) -> None:
-    if USE_RICH:
-        console.print(f"  [bold red]🚨[/bold red]  {msg}")
-    else:
-        print(f"  🚨  {msg}")
+        print(f"  !!  {msg}")
 
 
 def info(msg: str) -> None:
@@ -68,61 +64,26 @@ def info(msg: str) -> None:
         print(f"     {msg}")
 
 
-def pause() -> None:
-    time.sleep(0.4)
-
-
 # ── demo data ────────────────────────────────────────────────────────
-def make_sample_df() -> pd.DataFrame:
-    """Realistic dataset with PII and quality issues."""
+def make_df() -> pd.DataFrame:
     rng = np.random.default_rng(42)
     n = 50
-
     df = pd.DataFrame(
         {
             "id": range(1, n + 1),
-            "name": [
-                "Alice Johnson",
-                "Bob Martinez",
-                "Carol White",
-                "David Lee",
-                "Eve Thompson",
-            ]
-            * 10,
-            "email": [
-                "alice@example.com",
-                "bob.m@company.org",
-                "carol.white@mail.com",
-                "david@test.io",
-                "eve@example.net",
-            ]
-            * 10,
-            "phone": [
-                "555-0101",
-                "+1-555-0102",
-                "(555) 010-3000",
-                "555.0104",
-                "555-0105",
-            ]
-            * 10,
-            "ip_address": [
-                "192.168.1.1",
-                "10.0.0.5",
-                "172.16.0.1",
-                "8.8.8.8",
-                "1.1.1.1",
-            ]
-            * 10,
+            "name": ["Alice Johnson", "Bob Martinez", "Carol White", "David Lee", "Eve Thompson"] * 10,
+            "email": ["alice@example.com", "bob.m@company.org", "carol@mail.com", "david@test.io", "eve@example.net"] * 10,
+            "phone": ["555-0101", "+1-555-0102", "(555) 010-3000", "555.0104", "555-0105"] * 10,
+            "ip_address": ["192.168.1.1", "10.0.0.5", "172.16.0.1", "8.8.8.8", "1.1.1.1"] * 10,
             "salary": rng.normal(75_000, 15_000, n).clip(30_000, 200_000),
             "age": rng.integers(22, 65, n),
             "score": rng.uniform(0, 1, n),
-            "joined": pd.date_range("2020-01-01", periods=n, freq="W"),
+            "date": pd.date_range("2020-01-01", periods=n, freq="W"),
             "region": rng.choice(["NA", "EU", "APAC"], n),
             "churn": rng.choice([0, 1], n, p=[0.8, 0.2]),
         }
     )
-
-    # Inject quality issues
+    # Inject quality issues for demos
     df.loc[0:4, "salary"] = np.nan
     df.loc[5:7, "email"] = np.nan
     df = pd.concat([df, df.iloc[:3]], ignore_index=True)  # duplicates
@@ -130,80 +91,71 @@ def make_sample_df() -> pd.DataFrame:
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 1 — PII Detection & Masking
+# 1. PII Detection & Masking
 # ─────────────────────────────────────────────────────────────────────
-def demo_pii(df: pd.DataFrame) -> pd.DataFrame:
-    header("PII Detection & Anonymization", "🕵️")
+def demo_pii(df: pd.DataFrame) -> None:
+    header("PII Detection & Masking", "[1/8]")
 
     from valencity.pii import PIIDetector, PIIMasker
 
     detector = PIIDetector()
     report = detector.scan_dataframe(df)
-    pause()
 
     if report.has_pii:
-        err(f"PII detected in {len(report.pii_columns)} column(s): {report.pii_columns}")
-        for col, findings in report.details.items():
-            for f in findings[:2]:  # show first 2 per column
-                info(f"[{col}]  {f.pii_type}  →  '{f.value}'")
+        warn(f"PII detected in {len(report.pii_columns)} column(s): {report.pii_columns}")
+        ok(f"Total PII matches found: {report.total_matches}")
+        for col in report.pii_columns[:3]:
+            info(f"  Column '{col}' contains PII")
     else:
         ok("No PII found.")
 
-    # Mask it
-    for strategy in ("redact", "partial", "hash"):
-        masker = PIIMasker(strategy=strategy)
-        safe = masker.mask_dataframe(df)
-        sample = safe["email"].iloc[0]
-        ok(f"strategy='{strategy}'  →  email becomes  '{sample}'")
-        pause()
+    # Redact strategy
+    masker_redact = PIIMasker(strategy="redact")
+    safe = masker_redact.mask_dataframe(df)
+    ok(f"Redacted  -> email: '{safe['email'].iloc[0]}'")
 
-    # Return partially-masked version for downstream demos
-    masker = PIIMasker(strategy="partial")
-    return masker.mask_dataframe(df)
+    # Hash strategy
+    masker_hash = PIIMasker(strategy="hash")
+    safe_hash = masker_hash.mask_dataframe(df)
+    ok(f"Hashed    -> email: '{safe_hash['email'].iloc[0][:20]}...'")
+
+    # Fake replacement
+    masker_fake = PIIMasker(strategy="fake")
+    safe_fake = masker_fake.mask_dataframe(df)
+    ok(f"Fake data -> email: '{safe_fake['email'].iloc[0]}'")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 2 — Data Profiling
+# 2. Data Profiling
 # ─────────────────────────────────────────────────────────────────────
 def demo_profiling(df: pd.DataFrame) -> None:
-    header("Data Profiling", "📊")
+    header("Data Profiling", "[2/8]")
 
     from valencity.validation import DataProfiler
 
-    profiler = DataProfiler()
-    profile = profiler.profile(df)
-    pause()
+    profile = DataProfiler().profile(df)
 
-    ok(f"Rows: {profile.row_count}  |  Columns: {profile.column_count}")
-    ok(f"Missing values total: {profile.total_missing}")
+    ok(f"Rows: {profile.total_rows}  |  Columns: {profile.total_columns}")
 
     if USE_RICH:
-        table = Table(title="Column Profiles", show_lines=True)
+        table = Table(title="Column Stats", show_lines=True)
         table.add_column("Column", style="cyan")
         table.add_column("Type")
         table.add_column("Nulls")
         table.add_column("Unique")
-        for col_name, col_stats in list(profile.columns.items())[:6]:
-            table.add_row(
-                col_name,
-                str(col_stats.dtype),
-                str(col_stats.null_count),
-                str(col_stats.unique_count),
-            )
+        for col_name, cs in list(profile.columns.items())[:5]:
+            table.add_row(col_name, str(cs.dtype), str(cs.missing_count), str(cs.unique_count))
         console.print(table)
     else:
-        for col_name, col_stats in list(profile.columns.items())[:6]:
-            print(
-                f"  {col_name}: dtype={col_stats.dtype}, "
-                f"nulls={col_stats.null_count}, unique={col_stats.unique_count}"
-            )
+        for col_name, cs in list(profile.columns.items())[:5]:
+            print(f"  {col_name}: dtype={cs.dtype}, nulls={cs.missing_count}, unique={cs.unique_count}")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 3 — Schema Validation
+# 3. Schema Validation
 # ─────────────────────────────────────────────────────────────────────
 def demo_schema(df: pd.DataFrame) -> None:
-    header("Schema Validation", "✅")
+    header("Schema Validation", "[3/8]")
 
     from valencity.validation import DataSchema
 
@@ -212,225 +164,202 @@ def demo_schema(df: pd.DataFrame) -> None:
 
     schema = DataSchema.from_dataframe(train_df)
     ok(f"Schema inferred from {len(train_df)} training rows")
-    pause()
 
     result = schema.validate(prod_df)
     if result.is_valid:
-        ok("Production DataFrame passes all schema checks!")
+        ok("Production data passes all schema checks!")
     else:
-        warn(f"{len(result.errors)} schema violation(s) detected:")
+        warn(f"{len(result.errors)} schema violation(s) found:")
         for e in result.errors[:3]:
-            info(f"  Column '{e.column}': {e.message}")
+            info(f"  {e}")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 4 — Data Quality Checks
+# 4. Data Quality Checks
 # ─────────────────────────────────────────────────────────────────────
 def demo_quality(df: pd.DataFrame) -> None:
-    header("Data Quality Checks", "🔍")
+    header("Data Quality Checks", "[4/8]")
 
     from valencity.validation import DataQualityChecker
 
-    checker = DataQualityChecker()
-    quality = checker.check(df)
-    pause()
+    dqc = DataQualityChecker()
+    report = dqc.full_report(df)
 
-    ok(f"Null rate:      {quality.null_rate:.1%}")
-    ok(f"Duplicates:     {quality.duplicate_count}")
-    ok(f"Outlier cols:   {quality.outlier_columns}")
-    ok(f"Quality score:  {quality.quality_score:.1%}")
+    ok(f"Total rows: {report.total_rows}  |  Columns: {report.total_columns}")
+    ok(f"All checks passed: {report.passed}")
 
-    if quality.issues:
-        warn(f"{len(quality.issues)} issue(s) found:")
-        for issue in quality.issues[:3]:
-            info(f"  [{issue.severity}] {issue.column}: {issue.message}")
+    failed = report.failed_checks
+    if failed:
+        warn(f"{len(failed)} check(s) failed:")
+        for c in failed[:3]:
+            info(f"  [{c.check_type.value}] '{c.column}': {c.message}")
     else:
         ok("No quality issues found!")
 
+    warnings_list = report.warning_checks
+    if warnings_list:
+        info(f"  {len(warnings_list)} warning(s): {[w.column for w in warnings_list]}")
+
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 5 — Drift Detection
+# 5. Drift Detection
 # ─────────────────────────────────────────────────────────────────────
 def demo_drift(df: pd.DataFrame) -> None:
-    header("Data Drift Detection", "📈")
+    header("Data Drift Detection", "[5/8]")
 
     from valencity.validation import DriftDetector
+    from valencity.validation.drift import DriftMethod
 
-    reference = df.iloc[:30].copy()
-    # Simulate drifted production data
-    drifted = df.iloc[30:].copy()
+    numeric_df = df[["salary", "age", "score"]].copy()
+    reference = numeric_df.iloc[:30].dropna()
+    # Simulate salary drift in production
+    drifted = numeric_df.iloc[30:].copy()
     rng = np.random.default_rng(99)
-    drifted["salary"] = drifted["salary"] * rng.uniform(1.2, 1.8, len(drifted))
+    drifted["salary"] = drifted["salary"].fillna(75000) * rng.uniform(1.4, 1.9, len(drifted))
 
-    for method in ("ks_test", "psi"):
+    for method in (DriftMethod.KS_TEST, DriftMethod.PSI):
         detector = DriftDetector(method=method)
         detector.fit(reference_df=reference)
-        result = detector.detect(current_df=drifted)
-        pause()
+        result = detector.detect(current_df=drifted.dropna())
 
         if result.has_drift:
-            err(f"[{method}] Drift in: {result.drifted_columns}")
+            warn(f"[{method.value}] Drift in: {result.drifted_columns}")
         else:
-            ok(f"[{method}] No drift detected")
+            ok(f"[{method.value}] No significant drift detected")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 6 — Fluent Expectations API
+# 6. Fluent Expectations API
 # ─────────────────────────────────────────────────────────────────────
 def demo_expectations(df: pd.DataFrame) -> None:
-    header("Expectations API", "📋")
+    header("Expectations API", "[6/8]")
 
     from valencity.validation import expect
 
-    pause()
     result = (
         expect(df)
         .column("age").to_be_between(18, 100)
         .column("score").to_be_between(0.0, 1.0)
         .column("region").to_be_in(["NA", "EU", "APAC"])
-        .validate()
+        .run()
     )
 
     if result.passed:
-        ok("All expectations passed!")
+        ok(f"All {len(result.results)} expectations passed!")
     else:
-        warn(f"{result.failed_count} expectation(s) failed:")
-        for failure in result.failures[:3]:
-            info(f"  {failure.column}: {failure.message}")
+        warn(f"{len(result.failed_results)} expectation(s) failed:")
+        for f in result.failed_results[:3]:
+            info(f"  Column '{f.column}': {f.details}")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 7 — Leakage Detection & Safe CV
+# 7. Leakage Prevention & Safe CV
 # ─────────────────────────────────────────────────────────────────────
 def demo_leakage(df: pd.DataFrame) -> None:
-    header("ML Leakage Prevention", "🚫")
+    header("ML Leakage Prevention", "[7/8]")
 
     from sklearn.linear_model import LogisticRegression
     from sklearn.preprocessing import StandardScaler
 
-    from valencity.leakage import LeakageDetector, SafeCrossValidator, SafeSplitter
+    from valencity.leakage import (
+        LeakageDetector,
+        SafeCrossValidator,
+        safe_train_test_split,
+        temporal_train_test_split,
+    )
 
     feature_cols = ["salary", "age", "score"]
     X = df[feature_cols].fillna(df[feature_cols].median())
     y = df["churn"]
 
-    # Leakage detection
-    X_train = X.iloc[:40]
-    X_test = X.iloc[40:]
-    y_train = y.iloc[:40]
+    # Safe split
+    X_tr, X_te, y_tr, y_te = safe_train_test_split(X, y)
+    ok(f"SafeSplit -> train={len(X_tr)} rows, test={len(X_te)} rows")
 
+    # Leakage check
     ld = LeakageDetector()
-    issues = ld.detect(X_train, X_test, y_train)
-    pause()
-
+    issues = ld.full_check(X_tr, X_te, y_tr, y_te)
     if issues:
-        err(f"Leakage detected: {issues}")
+        warn(f"{len(issues)} leakage warning(s) detected")
+        for w in issues[:2]:
+            info(f"  {w}")
     else:
-        ok("No data leakage detected between train and test sets")
+        ok("No data leakage detected between train/test sets")
 
-    # Safe cross-validation
+    # Safe cross-validation (preprocessing never sees test fold)
     cv = SafeCrossValidator(n_splits=5, preprocessor=StandardScaler())
-    scores = cv.cross_val_score(LogisticRegression(max_iter=1000), X, y)
-    pause()
-    ok(
-        f"Safe CV scores: {scores.mean():.4f} ± {scores.std():.4f}  "
-        f"(no preprocessing leakage)"
-    )
+    scores = cv.cross_val_score(LogisticRegression(max_iter=500), X, y)
+    ok(f"Safe CV score: {scores.mean():.4f} +/- {scores.std():.4f}  (no preprocessing leakage)")
 
-    # Safe splitter
-    splitter = SafeSplitter(strategy="time_series")
-    X_tr, X_te, y_tr, y_te = splitter.split(X, y, time_col=None)
-    ok(
-        f"SafeSplitter → train={len(X_tr)} rows, test={len(X_te)} rows "
-        f"(time-series aware)"
-    )
+    # Temporal split (time-series aware)
+    X_with_date = df[feature_cols + ["date"]].fillna(df[feature_cols].median())
+    X_tr2, X_te2, y_tr2, y_te2 = temporal_train_test_split(X_with_date, y, time_column="date")
+    ok(f"Temporal split -> train={len(X_tr2)}, test={len(X_te2)} (chronological order preserved)")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 8 — Differential Privacy & Compliance
+# 8. Privacy: Differential Privacy + GDPR Compliance
 # ─────────────────────────────────────────────────────────────────────
 def demo_privacy(df: pd.DataFrame) -> None:
-    header("Privacy Engineering", "🔐")
+    header("Privacy Engineering", "[8/8]")
 
     from valencity.privacy import ComplianceChecker, DifferentialPrivacy
 
     # Differential Privacy
-    dp = DifferentialPrivacy(epsilon=1.0)
+    dp = DifferentialPrivacy()
     true_mean = df["salary"].dropna().mean()
-    noisy_mean = dp.add_noise(true_mean, sensitivity=1000)
-    pause()
-    ok(f"True mean salary:  ${true_mean:,.0f}")
-    ok(f"DP-protected mean: ${noisy_mean:,.0f}  (ε=1.0, Laplace noise)")
+    noisy_mean = dp.laplace_mechanism(value=true_mean, sensitivity=1000, epsilon=1.0)
+    ok(f"True mean salary:       ${true_mean:,.0f}")
+    ok(f"DP-protected mean:      ${noisy_mean:,.0f}  (Laplace, epsilon=1.0)")
 
-    # Compliance check
-    checker = ComplianceChecker()
-    compliance = checker.check(df)
-    pause()
-
-    if compliance.is_compliant:
-        ok("GDPR / CCPA: Fully compliant ✅")
+    # GDPR Compliance check
+    report = ComplianceChecker().check_gdpr(df)
+    if report.satisfied:
+        ok("GDPR compliance check: PASSED")
     else:
-        warn(f"Found {len(compliance.violations)} compliance issue(s):")
-        for v in compliance.violations[:3]:
-            info(f"  [{v.regulation}] {v.column}: {v.description}")
-            if v.suggestion:
-                info(f"    → Fix: {v.suggestion}")
+        warn(f"GDPR: {len(report.violations)} violation(s) found:")
+        for v in report.violations[:3]:
+            info(f"  [{v.severity}] {v.rule}")
+            info(f"    {v.description[:90]}...")
 
 
 # ─────────────────────────────────────────────────────────────────────
-# STEP 9 — Synthetic Data Generation
+# BONUS: Synthetic Data + HTML Report
 # ─────────────────────────────────────────────────────────────────────
-def demo_synthetic(df: pd.DataFrame) -> None:
-    header("Synthetic Data Generation", "🧬")
+def demo_extras(df: pd.DataFrame) -> None:
+    header("Bonus: Synthetic Data + HTML Report", "[+]")
 
+    # Synthetic Data
     from valencity.synthetic import SyntheticGenerator
 
-    gen = SyntheticGenerator()
-    synthetic = gen.generate(template_df=df[["salary", "age", "score", "region"]], n_rows=500)
-    pause()
+    numeric_df = df[["salary", "age", "score"]].dropna()
+    gen = SyntheticGenerator().from_dataframe(numeric_df)
+    synthetic = gen.generate(num_rows=500)
+    ok(f"Generated {len(synthetic)} synthetic rows (zero real data exposed)")
+    ok(f"Real salary mean:      ${numeric_df['salary'].mean():,.0f}")
+    ok(f"Synthetic salary mean: ${synthetic['salary'].mean():,.0f}")
 
-    ok(f"Generated {len(synthetic)} synthetic rows (no real data used)")
-    ok(f"Mean salary (real):      ${df['salary'].dropna().mean():,.0f}")
-    ok(f"Mean salary (synthetic): ${synthetic['salary'].mean():,.0f}")
-
-
-# ─────────────────────────────────────────────────────────────────────
-# STEP 10 — HTML Reports
-# ─────────────────────────────────────────────────────────────────────
-def demo_reports(df: pd.DataFrame) -> None:
-    header("HTML Report Generation", "📄")
+    # HTML Report
+    from pathlib import Path
 
     from valencity.pii import PIIDetector
     from valencity.reports import HTMLGenerator
 
     pii_report = PIIDetector().scan_dataframe(df)
-    gen = HTMLGenerator()
-    out = "demo_pii_report.html"
-    gen.generate_pii_report(pii_report, output_path=out)
-    pause()
-    ok(f"PII report saved → {out}  (open in browser 🌐)")
+    out_path = Path("demo_pii_report.html")
+    HTMLGenerator().render_pii_report(pii_report, output_path=out_path)
+    ok(f"PII HTML report saved -> {out_path.resolve()}")
 
-
-# ─────────────────────────────────────────────────────────────────────
-# STEP 11 — Async PII Detection
-# ─────────────────────────────────────────────────────────────────────
-def demo_async(df: pd.DataFrame) -> None:
-    header("Async PII Detection", "⚡")
-
+    # Async PII Detection
     import asyncio
 
     from valencity.pii import AsyncPIIDetector
 
-    async def _run() -> None:
-        detector = AsyncPIIDetector()
-        report = await detector.scan_dataframe(df)
-        if report.has_pii:
-            err(f"[Async] PII in: {report.pii_columns}")
-        else:
-            ok("[Async] No PII found")
+    async def _async_scan() -> None:
+        report = await AsyncPIIDetector().scan_dataframe(df)
+        ok(f"Async PII scan complete  -> has_pii={report.has_pii}, columns={report.pii_columns}")
 
-    asyncio.run(_run())
-    ok("Non-blocking scan complete — safe to use in async APIs / FastAPI routes")
+    asyncio.run(_async_scan())
 
 
 # ─────────────────────────────────────────────────────────────────────
@@ -440,19 +369,22 @@ def main() -> None:
     if USE_RICH:
         console.print(
             Panel.fit(
-                "[bold cyan]🛡️  VALENCITY — Full Feature Demo[/bold cyan]\n"
-                "[dim]ML Safety Toolkit · Privacy Engineering · v0.1.1[/dim]\n"
-                "[dim]pip install valencity   |   github.com/ihakawati/Valencity[/dim]",
+                "[bold cyan]Valencity - Full Feature Demo[/bold cyan]\n"
+                "[dim]ML Safety Toolkit | Privacy Engineering | v0.1.1[/dim]\n"
+                "[dim]pip install valencity[/dim]",
                 border_style="cyan",
             )
         )
     else:
-        print(__doc__)
+        print("=" * 60)
+        print("  VALENCITY - Full Feature Demo  |  v0.1.1")
+        print("  pip install valencity")
+        print("=" * 60)
 
-    df = make_sample_df()
-    info(f"Sample dataset ready: {df.shape[0]} rows × {df.shape[1]} columns")
+    df = make_df()
+    info(f"Dataset: {df.shape[0]} rows x {df.shape[1]} columns (with injected PII & quality issues)")
 
-    safe_df = demo_pii(df)
+    demo_pii(df)
     demo_profiling(df)
     demo_schema(df)
     demo_quality(df)
@@ -460,32 +392,28 @@ def main() -> None:
     demo_expectations(df)
     demo_leakage(df)
     demo_privacy(df)
-    demo_synthetic(df)
-    demo_reports(df)
-    demo_async(df)
+    demo_extras(df)
 
-    header("All demos complete!", "🎉")
+    header("All demos complete!", "[DONE]")
+
+    summary = (
+        "Valencity covers:\n"
+        "  [1] PII detection & masking (50+ patterns)\n"
+        "  [2] Data profiling\n"
+        "  [3] Schema validation\n"
+        "  [4] Quality checks\n"
+        "  [5] Drift detection (KS + PSI)\n"
+        "  [6] Fluent expectations API\n"
+        "  [7] Leakage prevention & safe CV\n"
+        "  [8] Differential privacy & GDPR compliance\n"
+        "  [+] Synthetic data + HTML reports + async support\n\n"
+        "  pip install valencity  |  github.com/iHakawaTi/Valencity"
+    )
+
     if USE_RICH:
-        console.print(
-            Panel(
-                "[bold green]Valencity covers every layer of ML safety:[/bold green]\n\n"
-                "  🕵️  PII detection & masking\n"
-                "  📊  Data profiling\n"
-                "  ✅  Schema & quality validation\n"
-                "  📈  Drift detection\n"
-                "  🚫  Leakage prevention (CV & splits)\n"
-                "  🔐  Differential privacy & compliance\n"
-                "  🧬  Synthetic data\n"
-                "  📄  HTML reports\n"
-                "  ⚡  Async support\n\n"
-                "[dim]pip install valencity   |   Star us on GitHub ⭐[/dim]",
-                title="[bold]🛡️ Valencity[/bold]",
-                border_style="green",
-            )
-        )
+        console.print(Panel(summary, title="[bold]Valencity[/bold]", border_style="green"))
     else:
-        print("\n  Valencity — pip install valencity")
-        print("  github.com/ihakawati/Valencity\n")
+        print(summary)
 
 
 if __name__ == "__main__":

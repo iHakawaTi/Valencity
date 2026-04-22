@@ -5,6 +5,7 @@ This module provides tools for detecting and anonymizing personally
 identifiable information (PII) in DataFrames and text.
 """
 
+from valencity.pii.async_detector import AsyncPIIDetector
 from valencity.pii.detector import PIIDetector, PIIMatch, PIIReport
 from valencity.pii.masker import MaskingStrategy, PIIMasker
 from valencity.pii.patterns import PIIPatterns, PIIType
@@ -17,4 +18,5 @@ __all__ = [
     "PIIMatch",
     "PIIReport",
     "MaskingStrategy",
+    "AsyncPIIDetector",
 ]
