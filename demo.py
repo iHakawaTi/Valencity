@@ -1,5 +1,5 @@
 """
-Valencity v0.1.1 - Full Feature Demo
+Valencity v0.1.2 - Full Feature Demo
 ======================================
 Run:  python demo.py
 pip install valencity
@@ -370,14 +370,14 @@ def main() -> None:
         console.print(
             Panel.fit(
                 "[bold cyan]Valencity - Full Feature Demo[/bold cyan]\n"
-                "[dim]ML Safety Toolkit | Privacy Engineering | v0.1.1[/dim]\n"
+                "[dim]ML Safety Toolkit | Privacy Engineering | v0.1.2[/dim]\n"
                 "[dim]pip install valencity[/dim]",
                 border_style="cyan",
             )
         )
     else:
         print("=" * 60)
-        print("  VALENCITY - Full Feature Demo  |  v0.1.1")
+        print("  VALENCITY - Full Feature Demo  |  v0.1.2")
         print("  pip install valencity")
         print("=" * 60)
 
